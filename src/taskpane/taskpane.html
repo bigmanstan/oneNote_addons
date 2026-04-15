@@ -11,36 +11,57 @@
     <style>
         body, html { margin:0; padding:0; height:100%; font-family:Segoe UI, sans-serif; background:#f8f9fa; overflow:hidden; }
         #header { background:#0078d4; color:white; padding:14px; font-size:19px; font-weight:600; }
-        .controls { padding:12px; background:#f1f1f1; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-        #mindmap { 
-            flex:1; margin:12px; padding:20px; background:white; border:2px solid #0078d4; 
-            border-radius:12px; box-shadow:0 6px 25px rgba(0,0,0,0.12); min-height:520px; 
-            overflow:auto; position:relative; 
+        .controls { padding:12px; background:#f1f1f1; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+        
+        #mindmap {
+            flex: 1;
+            margin: 12px;
+            padding: 30px;
+            background: white;
+            border: 3px solid #0078d4;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            min-height: 520px;
+            position: relative;
+            overflow: auto;
         }
+
         .node {
-            display:inline-block; padding:10px 18px; margin:12px; border-radius:8px; 
-            background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.15); 
-            font-weight:500; min-width:120px; text-align:center; cursor:pointer;
-            border:2px solid #0078d4;
+            position: absolute;
+            padding: 12px 22px;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+            font-weight: 600;
+            text-align: center;
+            min-width: 140px;
+            cursor: pointer;
+            user-select: none;
+            border: 3px solid #0078d4;
+            transition: all 0.2s;
         }
-        button { padding:9px 18px; border:none; border-radius:5px; cursor:pointer; }
-        .btn-primary { background:#0078d4; color:white; }
-        #error { color:red; background:#ffebee; padding:12px; margin:12px; border-radius:6px; display:none; }
+
+        .node:hover { transform: scale(1.05); }
+        .node.selected { border-color: #ff9800; box-shadow: 0 0 0 4px rgba(255,152,0,0.3); }
+
+        .root { background: #e3f2fd; font-size: 18px; }
+
+        button { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #0078d4; color: white; }
+        #error { color: red; background: #ffebee; padding: 12px; margin: 12px; border-radius: 8px; display: none; }
     </style>
 </head>
 <body>
     <div id="header">✦ Beautiful Mind Maps</div>
     
     <div class="controls">
-        <input id="nodeText" placeholder="New node text..." style="width:280px; padding:9px;">
-        <button onclick="addChild()" class="btn-primary">➕ Add Child Node</button>
-        <button onclick="insertToOneNote()" class="btn-primary">📤 Insert Beautiful Map to OneNote</button>
-        <button onclick="resetMap()" class="btn-primary">Reset</button>
+        <input id="nodeText" placeholder="New node text..." style="width:280px; padding:10px;">
+        <button onclick="addChild()" class="btn-primary">➕ Add Child</button>
+        <button onclick="insertToOneNote()" class="btn-primary">📤 Insert to OneNote</button>
+        <button onclick="resetMap()" class="btn-primary">Reset Map</button>
     </div>
 
-    <div id="mindmap">
-        <div id="root" class="node" onclick="selectNode(this)">Central Idea</div>
-    </div>
+    <div id="mindmap"></div>
     <div id="error"></div>
 
     <script src="taskpane.js"></script>
