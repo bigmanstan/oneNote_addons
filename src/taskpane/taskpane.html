@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <title>Beautiful Mind Maps</title>
+    
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    
+    <style>
+        body, html { margin:0; padding:0; height:100%; font-family:Segoe UI, sans-serif; background:#f8f9fa; overflow:hidden; }
+        #header { background:#0078d4; color:white; padding:14px; font-size:19px; font-weight:600; }
+        .controls { padding:12px; background:#f1f1f1; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+        #mindmap { 
+            flex:1; margin:12px; padding:20px; background:white; border:2px solid #0078d4; 
+            border-radius:12px; box-shadow:0 6px 25px rgba(0,0,0,0.12); min-height:520px; 
+            overflow:auto; position:relative; 
+        }
+        .node {
+            display:inline-block; padding:10px 18px; margin:12px; border-radius:8px; 
+            background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.15); 
+            font-weight:500; min-width:120px; text-align:center; cursor:pointer;
+            border:2px solid #0078d4;
+        }
+        button { padding:9px 18px; border:none; border-radius:5px; cursor:pointer; }
+        .btn-primary { background:#0078d4; color:white; }
+        #error { color:red; background:#ffebee; padding:12px; margin:12px; border-radius:6px; display:none; }
+    </style>
+</head>
+<body>
+    <div id="header">✦ Beautiful Mind Maps</div>
+    
+    <div class="controls">
+        <input id="nodeText" placeholder="New node text..." style="width:280px; padding:9px;">
+        <button onclick="addChild()" class="btn-primary">➕ Add Child Node</button>
+        <button onclick="insertToOneNote()" class="btn-primary">📤 Insert Beautiful Map to OneNote</button>
+        <button onclick="resetMap()" class="btn-primary">Reset</button>
+    </div>
+
+    <div id="mindmap">
+        <div id="root" class="node" onclick="selectNode(this)">Central Idea</div>
+    </div>
+    <div id="error"></div>
+
+    <script src="taskpane.js"></script>
+</body>
+</html>
