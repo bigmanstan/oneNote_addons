@@ -10,71 +10,61 @@
     
     <style>
         body, html { margin:0; padding:0; height:100%; font-family:Segoe UI, sans-serif; background:#f8f9fa; overflow:hidden; }
-        #header { background:#0078d4; color:white; padding:14px; font-size:19px; font-weight:600; }
-        .controls { padding:12px; background:#f1f1f1; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+        #header { background:#0078d4; color:white; padding:16px; font-size:20px; font-weight:600; text-align:center; }
+        .controls { padding:12px; background:#f1f1f1; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center; }
         
-        #mindmap-container {
-            flex: 1;
-            margin: 12px;
-            background: white;
-            border: 3px solid #0078d4;
-            border-radius: 16px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-            position: relative;
-            overflow: auto;
-            min-height: 560px;
-        }
-
         #mindmap {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            min-width: 1200px;   /* forces wider area so root is fully visible */
-            min-height: 600px;
+            flex: 1;
+            margin: 15px;
+            padding: 40px 20px;
+            background: white;
+            border: 4px solid #0078d4;
+            border-radius: 16px;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.15);
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+            min-height: 500px;
         }
 
         .node {
-            position: absolute;
-            padding: 14px 24px;
-            border-radius: 12px;
+            padding: 16px 32px;
+            border-radius: 14px;
             background: #ffffff;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
             font-weight: 600;
             text-align: center;
-            min-width: 160px;
-            cursor: move;           /* shows drag cursor */
-            border: 3px solid #0078d4;
-            user-select: none;
-            transition: all 0.2s;
-            z-index: 10;
+            min-width: 180px;
+            cursor: pointer;
+            border: 4px solid #0078d4;
+            transition: all 0.25s;
         }
 
         .node:hover { transform: scale(1.08); }
-        .node.selected { border-color: #ff9800; box-shadow: 0 0 0 5px rgba(255,152,0,0.4); }
-        .node.root { background: #e3f2fd; font-size: 18px; padding: 18px 32px; }
+        .node.selected { border-color: #ff9800; box-shadow: 0 0 0 6px rgba(255,152,0,0.35); }
+        .node.root { background: #e3f2fd; font-size: 19px; padding: 20px 40px; }
 
-        svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
-        .connector { stroke: #666; stroke-width: 3; stroke-linecap: round; fill: none; }
-
-        button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+        button { padding: 11px 22px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
         .btn-primary { background: #0078d4; color: white; }
-        #error { color: red; background: #ffebee; padding: 12px; margin: 12px; border-radius: 8px; display: none; }
+        #error, #status { padding: 12px; margin: 10px 15px; border-radius: 8px; text-align: center; }
+        #error { color: #d32f2f; background: #ffebee; display: none; }
+        #status { color: #0066cc; background: #e3f2fd; }
     </style>
 </head>
 <body>
     <div id="header">✦ Beautiful Mind Maps</div>
     
     <div class="controls">
-        <input id="nodeText" placeholder="New node text..." style="width:280px; padding:10px;">
+        <input id="nodeText" placeholder="New node text..." style="width:300px; padding:11px; font-size:15px;">
         <button onclick="addChild()" class="btn-primary">➕ Add Child</button>
         <button onclick="insertToOneNote()" class="btn-primary">📤 Insert to OneNote</button>
-        <button onclick="resetMap()" class="btn-primary">Reset Map</button>
+        <button onclick="resetMap()" class="btn-primary">Reset</button>
     </div>
 
-    <div id="mindmap-container">
-        <svg id="lines"></svg>
-        <div id="mindmap"></div>
-    </div>
+    <div id="status">Loading mind map...</div>
+    <div id="mindmap"></div>
     <div id="error"></div>
 
     <script src="taskpane.js"></script>
