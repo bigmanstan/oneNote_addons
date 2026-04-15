@@ -1,9 +1,9 @@
-let nodes = [];
 let nextId = 1;
+let currentLevel = 0;
 
 Office.onReady((info) => {
     if (info.host === Office.HostType.OneNote) {
-        resetMap();   // Create root node on load
+        resetMap();
     }
 });
 
@@ -13,30 +13,27 @@ function showError(msg) {
     err.style.display = "block";
 }
 
-function createNode(text, isRoot = false, parentId = null) {
+function createNode(text, isRoot = false, level = 0) {
     const mindmap = document.getElementById("mindmap");
     const node = document.createElement("div");
     node.className = "node" + (isRoot ? " root" : "");
     node.id = "node_" + nextId++;
     node.textContent = text;
-    
+    node.dataset.level = level;
+
     node.onclick = (e) => {
         e.stopPropagation();
         selectNode(node);
     };
 
-    // Position nodes nicely
-    if (isRoot) {
-        node.style.left = "40%";
-        node.style.top = "80px";
-    } else {
-        node.style.left = (Math.random() * 50 + 20) + "%";
-        node.style.top = (Math.random() * 300 + 200) + "px";
-    }
+    // Better positioning - horizontal tree style
+    const leftPos = 80 + (level * 240);
+    const topPos = 60 + (Math.random() * 80) + (level * 30);
+
+    node.style.left = leftPos + "px";
+    node.style.top = topPos + "px";
 
     mindmap.appendChild(node);
-    nodes.push({ id: node.id, element: node, parentId });
-
     return node;
 }
 
@@ -48,12 +45,17 @@ function selectNode(node) {
 
 function addChild() {
     const text = document.getElementById("nodeText").value.trim();
-    if (!text) return showError("Please type something in the box");
+    if (!text) return showError("Please type text in the box");
 
-    const parent = window.selectedNode || document.getElementById("node_1");
-    if (!parent) return showError("No parent node found");
+    let parent = window.selectedNode;
+    if (!parent) {
+        parent = document.getElementById("node_1"); // root
+    }
 
-    const newNode = createNode(text, false, parent.id);
+    const parentLevel = parseInt(parent.dataset.level || 0);
+    const newLevel = parentLevel + 1;
+
+    const newNode = createNode(text, false, newLevel);
     selectNode(newNode);
 
     document.getElementById("nodeText").value = "";
@@ -63,17 +65,16 @@ async function insertToOneNote() {
     const mindmap = document.getElementById("mindmap");
     
     try {
-        document.getElementById("error").innerHTML = "<strong>Generating beautiful image...</strong>";
+        document.getElementById("error").innerHTML = "<strong>Generating image... (this may take a few seconds)</strong>";
         document.getElementById("error").style.display = "block";
 
         const canvas = await html2canvas(mindmap, {
-            scale: 2.5,
+            scale: 2,
             backgroundColor: "#ffffff",
-            logging: false,
-            useCORS: true
+            logging: false
         });
 
-        const dataUrl = canvas.toDataURL("image/png", 0.95);
+        const dataUrl = canvas.toDataURL("image/png");
 
         await OneNote.run(async (context) => {
             const page = context.application.getActivePage();
@@ -86,7 +87,7 @@ async function insertToOneNote() {
         });
 
         document.getElementById("error").style.display = "none";
-        alert("✅ Beautiful mind map inserted into OneNote page!");
+        alert("✅ Beautiful mind map inserted successfully!");
         
     } catch (err) {
         showError("Insert failed: " + err.message);
@@ -96,11 +97,13 @@ async function insertToOneNote() {
 function resetMap() {
     const mindmap = document.getElementById("mindmap");
     mindmap.innerHTML = '';
-    nodes = [];
     nextId = 1;
 
-    const root = createNode("Central Idea", true);
+    // Create centered root node
+    const root = createNode("Central Idea", true, 0);
+    root.style.left = "calc(50% - 90px)";
+    root.style.top = "60px";
+
     selectNode(root);
-    
     document.getElementById("error").style.display = "none";
 }
