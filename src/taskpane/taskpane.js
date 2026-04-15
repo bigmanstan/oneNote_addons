@@ -1,5 +1,4 @@
-let nextId = 1;
-let currentLevel = 0;
+let selectedNode = null;
 
 Office.onReady((info) => {
     if (info.host === Office.HostType.OneNote) {
@@ -13,49 +12,34 @@ function showError(msg) {
     err.style.display = "block";
 }
 
-function createNode(text, isRoot = false, level = 0) {
-    const mindmap = document.getElementById("mindmap");
-    const node = document.createElement("div");
-    node.className = "node" + (isRoot ? " root" : "");
-    node.id = "node_" + nextId++;
-    node.textContent = text;
-    node.dataset.level = level;
-
-    node.onclick = (e) => {
-        e.stopPropagation();
-        selectNode(node);
-    };
-
-    // Better positioning - horizontal tree style
-    const leftPos = 80 + (level * 240);
-    const topPos = 60 + (Math.random() * 80) + (level * 30);
-
-    node.style.left = leftPos + "px";
-    node.style.top = topPos + "px";
-
-    mindmap.appendChild(node);
-    return node;
-}
-
 function selectNode(node) {
     document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
     node.classList.add('selected');
-    window.selectedNode = node;
+    selectedNode = node;
 }
 
 function addChild() {
     const text = document.getElementById("nodeText").value.trim();
-    if (!text) return showError("Please type text in the box");
-
-    let parent = window.selectedNode;
-    if (!parent) {
-        parent = document.getElementById("node_1"); // root
+    if (!text) {
+        return showError("Please type text in the box first");
     }
 
-    const parentLevel = parseInt(parent.dataset.level || 0);
-    const newLevel = parentLevel + 1;
+    const mindmap = document.getElementById("mindmap");
+    let targetLevel = mindmap.lastElementChild;
 
-    const newNode = createNode(text, false, newLevel);
+    // If no levels yet or last level is empty, create new level
+    if (!targetLevel || targetLevel.classList.contains('level') === false) {
+        targetLevel = document.createElement("div");
+        targetLevel.className = "level";
+        mindmap.appendChild(targetLevel);
+    }
+
+    const newNode = document.createElement("div");
+    newNode.className = "node";
+    newNode.textContent = text;
+    newNode.onclick = () => selectNode(newNode);
+
+    targetLevel.appendChild(newNode);
     selectNode(newNode);
 
     document.getElementById("nodeText").value = "";
@@ -63,13 +47,14 @@ function addChild() {
 
 async function insertToOneNote() {
     const mindmap = document.getElementById("mindmap");
-    
+    if (!mindmap.children.length) return showError("Nothing to insert yet");
+
     try {
-        document.getElementById("error").innerHTML = "<strong>Generating image... (this may take a few seconds)</strong>";
+        document.getElementById("error").innerHTML = "<strong>Generating image... please wait</strong>";
         document.getElementById("error").style.display = "block";
 
         const canvas = await html2canvas(mindmap, {
-            scale: 2,
+            scale: 2.2,
             backgroundColor: "#ffffff",
             logging: false
         });
@@ -87,23 +72,28 @@ async function insertToOneNote() {
         });
 
         document.getElementById("error").style.display = "none";
-        alert("✅ Beautiful mind map inserted successfully!");
-        
+        alert("✅ Mind map inserted successfully!");
     } catch (err) {
-        showError("Insert failed: " + err.message);
+        showError("Insert failed: " + (err.message || "Unknown error"));
     }
 }
 
 function resetMap() {
     const mindmap = document.getElementById("mindmap");
     mindmap.innerHTML = '';
-    nextId = 1;
 
-    // Create centered root node
-    const root = createNode("Central Idea", true, 0);
-    root.style.left = "calc(50% - 90px)";
-    root.style.top = "60px";
+    // Create root level
+    const rootLevel = document.createElement("div");
+    rootLevel.className = "level";
+    mindmap.appendChild(rootLevel);
 
+    const root = document.createElement("div");
+    root.className = "node root";
+    root.textContent = "Central Idea";
+    root.onclick = () => selectNode(root);
+
+    rootLevel.appendChild(root);
     selectNode(root);
+
     document.getElementById("error").style.display = "none";
 }
