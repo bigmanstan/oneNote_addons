@@ -1,4 +1,9 @@
-let selectedNode = null;
+let nodes = [];
+let nextId = 1;
+let selectedNodeId = null;
+let isDragging = false;
+let dragNode = null;
+let offsetX = 0, offsetY = 0;
 
 Office.onReady((info) => {
     if (info.host === Office.HostType.OneNote) {
@@ -12,51 +17,135 @@ function showError(msg) {
     err.style.display = "block";
 }
 
-function selectNode(node) {
+function createNode(text, isRoot = false) {
+    const mindmap = document.getElementById("mindmap");
+    const node = document.createElement("div");
+    node.className = "node" + (isRoot ? " root" : "");
+    node.id = "node_" + nextId++;
+    node.textContent = text;
+
+    // Mouse drag support
+    node.addEventListener("mousedown", startDrag);
+
+    mindmap.appendChild(node);
+    nodes.push({ id: node.id, element: node, children: [], text: text });
+
+    return node;
+}
+
+function startDrag(e) {
+    dragNode = e.currentTarget;
+    isDragging = true;
+    const rect = dragNode.getBoundingClientRect();
+    const containerRect = document.getElementById("mindmap-container").getBoundingClientRect();
+    
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+
+    document.addEventListener("mousemove", doDrag);
+    document.addEventListener("mouseup", stopDrag);
+}
+
+function doDrag(e) {
+    if (!isDragging || !dragNode) return;
+    const container = document.getElementById("mindmap-container");
+    const contRect = container.getBoundingClientRect();
+
+    let newLeft = e.clientX - contRect.left - offsetX;
+    let newTop = e.clientY - contRect.top - offsetY;
+
+    // Prevent dragging too far out
+    newLeft = Math.max(20, Math.min(newLeft, contRect.width - 200));
+    newTop = Math.max(20, Math.min(newTop, contRect.height - 100));
+
+    dragNode.style.left = newLeft + "px";
+    dragNode.style.top = newTop + "px";
+
+    drawLines();
+}
+
+function stopDrag() {
+    isDragging = false;
+    dragNode = null;
+    document.removeEventListener("mousemove", doDrag);
+    document.removeEventListener("mouseup", stopDrag);
+}
+
+function selectNode(id) {
     document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
-    node.classList.add('selected');
-    selectedNode = node;
+    const nodeEl = document.getElementById(id);
+    if (nodeEl) nodeEl.classList.add('selected');
+    selectedNodeId = id;
+    drawLines();
 }
 
 function addChild() {
     const text = document.getElementById("nodeText").value.trim();
-    if (!text) {
-        return showError("Please type text in the box first");
-    }
+    if (!text) return showError("Please type node text");
 
-    const mindmap = document.getElementById("mindmap");
-    let targetLevel = mindmap.lastElementChild;
+    let parentId = selectedNodeId || "node_1";
+    const parent = nodes.find(n => n.id === parentId);
+    if (!parent) return showError("Parent not found");
 
-    // If no levels yet or last level is empty, create new level
-    if (!targetLevel || targetLevel.classList.contains('level') === false) {
-        targetLevel = document.createElement("div");
-        targetLevel.className = "level";
-        mindmap.appendChild(targetLevel);
-    }
+    const newNodeEl = createNode(text);
+    parent.children.push(newNodeEl.id);
 
-    const newNode = document.createElement("div");
-    newNode.className = "node";
-    newNode.textContent = text;
-    newNode.onclick = () => selectNode(newNode);
+    // Place to the right with spacing
+    const parentEl = document.getElementById(parentId);
+    const pRect = parentEl.getBoundingClientRect();
+    const cRect = document.getElementById("mindmap-container").getBoundingClientRect();
 
-    targetLevel.appendChild(newNode);
-    selectNode(newNode);
+    newNodeEl.style.left = (pRect.left - cRect.left + 240) + "px";
+    newNodeEl.style.top = (pRect.top - cRect.top + (parent.children.length - 1) * 90) + "px";
+
+    selectNode(newNodeEl.id);
+    drawLines();
 
     document.getElementById("nodeText").value = "";
 }
 
-async function insertToOneNote() {
-    const mindmap = document.getElementById("mindmap");
-    if (!mindmap.children.length) return showError("Nothing to insert yet");
+function drawLines() {
+    const svg = document.getElementById("lines");
+    svg.innerHTML = "";
 
+    nodes.forEach(node => {
+        if (node.children.length === 0) return;
+        const parentEl = node.element;
+        const pRect = parentEl.getBoundingClientRect();
+        const contRect = document.getElementById("mindmap-container").getBoundingClientRect();
+
+        node.children.forEach(childId => {
+            const childEl = document.getElementById(childId);
+            if (!childEl) return;
+            const cRect = childEl.getBoundingClientRect();
+
+            const x1 = pRect.left - contRect.left + pRect.width / 2;
+            const y1 = pRect.top - contRect.top + pRect.height / 2;
+            const x2 = cRect.left - contRect.left + 15;
+            const y2 = cRect.top - contRect.top + cRect.height / 2;
+
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("class", "connector");
+            path.setAttribute("d", `M ${x1} ${y1} Q ${x1 + 80} ${y1}, ${x2} ${y2}`);
+            svg.appendChild(path);
+        });
+    });
+}
+
+async function insertToOneNote() {
+    const container = document.getElementById("mindmap-container");
     try {
-        document.getElementById("error").innerHTML = "<strong>Generating image... please wait</strong>";
+        document.getElementById("error").innerHTML = "<strong>Generating full image... (may take a few seconds)</strong>";
         document.getElementById("error").style.display = "block";
 
-        const canvas = await html2canvas(mindmap, {
-            scale: 2.2,
+        const canvas = await html2canvas(container, {
+            scale: 2.5,
             backgroundColor: "#ffffff",
-            logging: false
+            logging: false,
+            scrollX: 0,
+            scrollY: 0,
+            width: container.scrollWidth,
+            height: container.scrollHeight
         });
 
         const dataUrl = canvas.toDataURL("image/png");
@@ -72,28 +161,24 @@ async function insertToOneNote() {
         });
 
         document.getElementById("error").style.display = "none";
-        alert("✅ Mind map inserted successfully!");
+        alert("✅ Full mind map inserted into OneNote!");
     } catch (err) {
-        showError("Insert failed: " + (err.message || "Unknown error"));
+        showError("Insert failed: " + err.message);
     }
 }
 
 function resetMap() {
     const mindmap = document.getElementById("mindmap");
+    const svg = document.getElementById("lines");
     mindmap.innerHTML = '';
+    svg.innerHTML = '';
+    nodes = [];
+    nextId = 1;
 
-    // Create root level
-    const rootLevel = document.createElement("div");
-    rootLevel.className = "level";
-    mindmap.appendChild(rootLevel);
+    const root = createNode("Central Idea", true);
+    root.style.left = "420px";   // centered
+    root.style.top = "80px";
 
-    const root = document.createElement("div");
-    root.className = "node root";
-    root.textContent = "Central Idea";
-    root.onclick = () => selectNode(root);
-
-    rootLevel.appendChild(root);
-    selectNode(root);
-
+    selectNode(root.id);
     document.getElementById("error").style.display = "none";
 }

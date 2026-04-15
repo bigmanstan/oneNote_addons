@@ -9,71 +9,56 @@
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     
     <style>
-        body, html { 
-            margin:0; padding:0; height:100%; 
-            font-family:Segoe UI, sans-serif; 
-            background:#f8f9fa; 
-            overflow:hidden; 
-        }
-        #header { 
-            background:#0078d4; color:white; padding:14px; 
-            font-size:19px; font-weight:600; 
-        }
-        .controls { 
-            padding:12px; background:#f1f1f1; 
-            display:flex; flex-wrap:wrap; gap:10px; align-items:center; 
-        }
+        body, html { margin:0; padding:0; height:100%; font-family:Segoe UI, sans-serif; background:#f8f9fa; overflow:hidden; }
+        #header { background:#0078d4; color:white; padding:14px; font-size:19px; font-weight:600; }
+        .controls { padding:12px; background:#f1f1f1; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
         
-        #mindmap { 
-            flex: 1; 
-            margin: 12px; 
-            padding: 30px; 
-            background: white; 
-            border: 3px solid #0078d4; 
-            border-radius: 16px; 
-            box-shadow: 0 8px 30px rgba(0,0,0,0.15); 
-            min-height: 520px; 
+        #mindmap-container {
+            flex: 1;
+            margin: 12px;
+            background: white;
+            border: 3px solid #0078d4;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            position: relative;
             overflow: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
+            min-height: 560px;
         }
 
-        .level {
-            display: flex;
-            gap: 30px;
-            flex-wrap: wrap;
-            justify-content: center;
+        #mindmap {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-width: 1200px;   /* forces wider area so root is fully visible */
+            min-height: 600px;
         }
 
         .node {
-            padding: 14px 26px;
+            position: absolute;
+            padding: 14px 24px;
             border-radius: 12px;
             background: #ffffff;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
             font-weight: 600;
             text-align: center;
             min-width: 160px;
-            cursor: pointer;
+            cursor: move;           /* shows drag cursor */
             border: 3px solid #0078d4;
+            user-select: none;
             transition: all 0.2s;
+            z-index: 10;
         }
 
-        .node:hover { transform: scale(1.06); }
-        .node.selected { border-color: #ff9800; box-shadow: 0 0 0 5px rgba(255,152,0,0.3); }
-        .node.root { 
-            background: #e3f2fd; 
-            font-size: 18px; 
-            padding: 18px 32px; 
-            align-self: center;
-        }
+        .node:hover { transform: scale(1.08); }
+        .node.selected { border-color: #ff9800; box-shadow: 0 0 0 5px rgba(255,152,0,0.4); }
+        .node.root { background: #e3f2fd; font-size: 18px; padding: 18px 32px; }
+
+        svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+        .connector { stroke: #666; stroke-width: 3; stroke-linecap: round; fill: none; }
 
         button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
         .btn-primary { background: #0078d4; color: white; }
-        #error { 
-            color: red; background: #ffebee; padding: 12px; 
-            margin: 12px; border-radius: 8px; display: none; 
-        }
+        #error { color: red; background: #ffebee; padding: 12px; margin: 12px; border-radius: 8px; display: none; }
     </style>
 </head>
 <body>
@@ -86,7 +71,10 @@
         <button onclick="resetMap()" class="btn-primary">Reset Map</button>
     </div>
 
-    <div id="mindmap"></div>
+    <div id="mindmap-container">
+        <svg id="lines"></svg>
+        <div id="mindmap"></div>
+    </div>
     <div id="error"></div>
 
     <script src="taskpane.js"></script>
